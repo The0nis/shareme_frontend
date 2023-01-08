@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { gapi } from "gapi-script"
 import GoogleLogin from 'react-google-login';
 import { useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
@@ -6,9 +7,40 @@ import shareVideo from '../assets/share.mp4';
 import logo from '../assets/logowhite.png';
 import { render } from 'react-dom';
 
+import { client } from '../client';
+
 const Login = () => {
+        // i had to do npm install gapi-script and include the below for the page to redirect to the home page    const clientId = '981891596220-bb1ibms8lfpo7sjk1dlm17amiovdjqac.apps.googleusercontent.com';
+    const clientId = '981891596220-bb1ibms8lfpo7sjk1dlm17amiovdjqac.apps.googleusercontent.com';
+    useEffect(() => {
+        const initClient = () => {
+          gapi.client.init({
+            clientId: clientId,
+            scope: "",
+          });
+        };
+        gapi.load("client:auth2", initClient);
+      });
+    
+    const navigate = useNavigate();
     const responseGoogle = (response) => {
         // console.log(response);
+        localStorage.setItem('user', JSON.stringify(response.profileObj));
+
+        //destructuring the array
+        const { name, googleId, imageUrl} = response.profileObj;
+
+        //doc for the sanity schema
+        const doc ={
+            _id: googleId,
+            _type: 'user', // specifying it to the user schema
+            userName: name,
+            image: imageUrl,
+        }
+        //to create doc if not exist and navigate back to home using the useNavigate hook
+        client.createIfNotExists(doc).then(() => {
+            navigate('/', { replace: true })
+        })
 
     }
   return (
@@ -30,7 +62,10 @@ const Login = () => {
 
                 <div className='shadow-2xl'>
                     <GoogleLogin
-                        clientId={process.env.REACT_APP_API_TOKEN}
+                    //to get the client id, go to https://console.cloud.google.com/getting-started?hl=en-AU, 
+                    //Create new project
+                    //go to create credientials, then oAuth client follow the process and copy the client id and paste in the .env file before coming here
+                        clientId={process.env.REACT_APP_GOOGLE_API_TOKEN}
                         render={(renderProps) => (
                             <button
                             type='button'
